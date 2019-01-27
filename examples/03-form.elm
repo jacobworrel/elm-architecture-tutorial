@@ -1,7 +1,9 @@
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onInput, onClick)
+import String exposing (..)
+import Char exposing (isUpper)
 
 
 
@@ -20,12 +22,14 @@ type alias Model =
   { name : String
   , password : String
   , passwordAgain : String
+  , age : String
+  , ready : Bool
   }
 
 
 init : Model
 init =
-  Model "" "" ""
+  Model "" "" "" "" False
 
 
 
@@ -36,6 +40,8 @@ type Msg
   = Name String
   | Password String
   | PasswordAgain String
+  | Age String
+  | Validate
 
 
 update : Msg -> Model -> Model
@@ -50,6 +56,12 @@ update msg model =
     PasswordAgain password ->
       { model | passwordAgain = password }
 
+    Age age ->
+      { model | age = age }
+
+    Validate ->
+      { model | ready = True }
+
 
 
 -- VIEW
@@ -61,6 +73,8 @@ view model =
     [ viewInput "text" "Name" model.name Name
     , viewInput "password" "Password" model.password Password
     , viewInput "password" "Re-enter Password" model.passwordAgain PasswordAgain
+    , viewInput "text" "Age" model.age Age
+    , button [ onClick Validate ] [text "Submit"]
     , viewValidation model
     ]
 
@@ -71,8 +85,19 @@ viewInput t p v toMsg =
 
 
 viewValidation : Model -> Html msg
-viewValidation model =
-  if model.password == model.passwordAgain then
-    div [ style "color" "green" ] [ text "OK" ]
-  else
-    div [ style "color" "red" ] [ text "Passwords do not match!" ]
+viewValidation { password, passwordAgain, ready } =
+  let
+    (color, message) =
+      if ready then
+        if String.length password < 8 then
+          ("red", "Password must be at least 8 characters long.")
+        else if String.any isUpper password == False then
+          ("red", "Password must contain upper case letter.")
+        else if password /= passwordAgain then
+          ("red", "Passwords do not match!")
+        else
+          ("green", "OK")
+      else
+        ("", "") -- renders empty div
+  in
+    div [ style "color" color ] [ text message ]
